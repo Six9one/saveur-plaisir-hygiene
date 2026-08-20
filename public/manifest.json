@@ -1,0 +1,24 @@
+﻿{
+  "name": "Saveur Plaisir HACCP - Hygiène Boulangerie",
+  "short_name": "Saveur Plaisir",
+  "description": "Application HACCP et suivi sanitaire pour boulangerie-pâtisserie",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
