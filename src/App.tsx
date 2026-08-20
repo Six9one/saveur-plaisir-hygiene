@@ -42,6 +42,7 @@ import { PestControlModule } from './components/PestControlModule';
 import { WasteModule } from './components/WasteModule';
 import { DdpAuditSimulatorModule } from './components/DdpAuditSimulatorModule';
 import { AuditReportModule } from './components/AuditReportModule';
+import { UserGuideModule } from './components/UserGuideModule';
 import { PinModal } from './components/PinModal';
 import { IncidentModal } from './components/IncidentModal';
 import { CloudSyncModal } from './components/CloudSyncModal';
@@ -1054,6 +1055,7 @@ export const App: React.FC = () => {
         onGoHome={() => setActiveTab('home')}
         onOpenPinModal={() => setShowPinModal(true)}
         onOpenHistory={() => setActiveTab('audit_report')}
+        onOpenGuide={() => setActiveTab('user_guide')}
         currentUser={currentUser}
         isHome={activeTab === 'home'}
       />
@@ -1185,6 +1187,10 @@ export const App: React.FC = () => {
             onDeleteRecord={handleDeleteTemperatureRecord}
             onDeleteSecondaryDlc={handleDeleteSecondaryDlc}
           />
+        )}
+
+        {activeTab === 'user_guide' && (
+          <UserGuideModule onClose={() => setActiveTab('home')} />
         )}
       </main>
 

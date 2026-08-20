@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
-import { Home, FileSpreadsheet } from 'lucide-react';
+import { Home, FileSpreadsheet, HelpCircle } from 'lucide-react';
 import type { User } from '../types';
 
 interface HeaderProps {
   onGoHome?: () => void;
   onOpenPinModal?: () => void;
   onOpenHistory?: () => void;
+  onOpenGuide?: () => void;
   currentUser?: User;
   isHome?: boolean;
 }
@@ -14,6 +15,7 @@ export const Header: React.FC<HeaderProps> = ({
   onGoHome,
   onOpenPinModal,
   onOpenHistory,
+  onOpenGuide,
   currentUser,
   isHome = true,
 }) => {
@@ -103,6 +105,18 @@ export const Header: React.FC<HeaderProps> = ({
                   </span>
                   <span className="text-[10px] text-slate-500">{currentUser.role}</span>
                 </div>
+              </button>
+            )}
+
+            {/* Guide & Tutos Shortcut */}
+            {onOpenGuide && (
+              <button
+                onClick={onOpenGuide}
+                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-amber-400 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-2xl shadow-xs transition-all cursor-pointer text-slate-200 hover:text-amber-400 font-bold text-xs"
+                title="Guide d'Utilisation & Tutos"
+              >
+                <HelpCircle className="w-4 h-4 text-amber-400" />
+                <span className="hidden sm:inline">Guide & Tutos</span>
               </button>
             )}
 

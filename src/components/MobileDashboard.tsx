@@ -8,6 +8,7 @@ import {
   Bug,
   Trash2,
   FileSpreadsheet,
+  HelpCircle,
 } from 'lucide-react';
 
 interface MobileDashboardProps {
@@ -45,12 +46,12 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
     {
       id: 'secondary_dlc' as TabType,
       title: 'Étiquettes',
-      subtitle: 'Bientôt disponible',
+      subtitle: 'DLC Secondaires',
       icon: Tag,
-      cardBg: 'bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-900/30',
-      iconBg: 'bg-amber-800 text-white',
-      badge: '⏳ Bientôt actif',
-      badgeBg: 'bg-amber-950 text-amber-200 border border-amber-500/30',
+      cardBg: 'bg-pink-600 hover:bg-pink-700 text-white shadow-lg shadow-pink-900/30',
+      iconBg: 'bg-pink-800 text-white',
+      badge: 'J+3 / J+5',
+      badgeBg: 'bg-pink-950 text-pink-200',
     },
     {
       id: 'cleaning' as TabType,
@@ -65,12 +66,12 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
     {
       id: 'pest_control' as TabType,
       title: 'Nuisibles',
-      subtitle: 'Pièges & Dératisation',
+      subtitle: 'Pièges & EDEN VERT',
       icon: Bug,
-      cardBg: 'bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-900/30',
-      iconBg: 'bg-rose-800 text-white',
+      cardBg: 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-900/30',
+      iconBg: 'bg-purple-800 text-white',
       badge: '4 Pièges',
-      badgeBg: 'bg-rose-950 text-rose-200',
+      badgeBg: 'bg-purple-950 text-purple-200',
     },
     {
       id: 'waste' as TabType,
@@ -91,6 +92,16 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
       iconBg: 'bg-slate-950 text-amber-400',
       badge: '📄 Export PDF',
       badgeBg: 'bg-slate-950 text-white',
+    },
+    {
+      id: 'user_guide' as TabType,
+      title: 'Guide & Tutos',
+      subtitle: 'Fiches A4 & Infographies',
+      icon: HelpCircle,
+      cardBg: 'bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-900/30 font-bold',
+      iconBg: 'bg-teal-800 text-white',
+      badge: '📘 Manuel',
+      badgeBg: 'bg-teal-950 text-teal-200',
     },
   ];
 

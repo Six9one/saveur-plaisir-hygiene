@@ -6,6 +6,7 @@ import {
   Sparkles,
   Bug,
   FileSpreadsheet,
+  HelpCircle,
 } from 'lucide-react';
 
 export type TabType =
@@ -16,7 +17,8 @@ export type TabType =
   | 'pest_control'
   | 'waste'
   | 'audit_report'
-  | 'ddpp_simulator';
+  | 'ddpp_simulator'
+  | 'user_guide';
 
 interface NavigationProps {
   activeTab: TabType;
@@ -72,6 +74,12 @@ export const Navigation: React.FC<NavigationProps> = ({
       label: 'Historique',
       sublabel: 'Factures & PDF',
       icon: FileSpreadsheet,
+    },
+    {
+      id: 'user_guide' as TabType,
+      label: 'Guide & Tutos',
+      sublabel: 'Fiches A4 & Aide',
+      icon: HelpCircle,
     },
   ];
 
