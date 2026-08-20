@@ -197,62 +197,160 @@ export const UserGuideModule: React.FC<UserGuideModuleProps> = ({ onClose }) => 
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               
               {/* Moment 1 : Matin */}
-              <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
-                    🌅 MATIN (6h30)
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-mono">15 sec chrono</span>
+              <div
+                onClick={() => setFullScreenImage(guideTemp)}
+                className="p-4 bg-slate-950 rounded-3xl border border-slate-800 hover:border-amber-500/50 space-y-3 cursor-pointer transition-all group shadow-md flex flex-col justify-between"
+              >
+                <div>
+                  <div className="h-32 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 relative mb-3">
+                    <img src={guideTemp} alt="Matin T°" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <span className="absolute bottom-1.5 right-1.5 bg-slate-950/80 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-lg backdrop-blur-xs flex items-center gap-1">
+                      <Maximize2 className="w-3 h-3" /> Agrandir
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/20">
+                      🌅 1. LE MATIN (6h30)
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">15 sec</span>
+                  </div>
+
+                  <h3 className="text-sm font-black text-white mt-1.5">Relevés de Frigos</h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    1. Appuie sur <strong>Relevés</strong>.<br />
+                    2. Appuie sur le gros bouton vert <strong>« Valider (RAS) »</strong>.
+                  </p>
                 </div>
-                <h3 className="text-xs font-black text-white">Relevés de Frigos</h3>
-                <p className="text-[11px] text-slate-300">
-                  1. Ouvre l'onglet <strong>Relevés</strong>.<br />
-                  2. Clique sur <strong>« Valider Tout (RAS) »</strong> ou note les T° affichées sur les cadrans.
-                </p>
-                <div className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 p-1.5 rounded-lg text-center">
+
+                <div className="text-xs text-emerald-400 font-bold bg-emerald-500/10 p-2 rounded-xl text-center border border-emerald-500/20">
                   ✓ Fait pour la demi-journée !
                 </div>
               </div>
 
               {/* Moment 2 : Livraison */}
-              <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-lg border border-blue-500/20">
-                    🚚 LIVRAISON (10h00)
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-mono">20 sec chrono</span>
+              <div
+                onClick={() => setFullScreenImage(guideReception)}
+                className="p-4 bg-slate-950 rounded-3xl border border-slate-800 hover:border-blue-500/50 space-y-3 cursor-pointer transition-all group shadow-md flex flex-col justify-between"
+              >
+                <div>
+                  <div className="h-32 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 relative mb-3">
+                    <img src={guideReception} alt="Livraison BL" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <span className="absolute bottom-1.5 right-1.5 bg-slate-950/80 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-lg backdrop-blur-xs flex items-center gap-1">
+                      <Maximize2 className="w-3 h-3" /> Agrandir
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-lg border border-blue-500/20">
+                      🚚 2. LIVRAISON (10h00)
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">20 sec</span>
+                  </div>
+
+                  <h3 className="text-sm font-black text-white mt-1.5">Le livreur arrive</h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    1. Appuie sur <strong>Réception</strong>.<br />
+                    2. Prends en photo le bon papier du livreur.<br />
+                    3. Appuie sur <strong>Valider</strong>.
+                  </p>
                 </div>
-                <h3 className="text-xs font-black text-white">Le livreur arrive</h3>
-                <p className="text-[11px] text-slate-300">
-                  1. Ouvre l'onglet <strong>Réception</strong>.<br />
-                  2. Prends en photo le bon papier avec l'appareil photo.<br />
-                  3. Clique sur <strong>Valider</strong>.
-                </p>
-                <div className="text-[10px] text-blue-400 font-bold bg-blue-500/10 p-1.5 rounded-lg text-center">
-                  ✓ Zéro archivage papier à classer !
+
+                <div className="text-xs text-blue-400 font-bold bg-blue-500/10 p-2 rounded-xl text-center border border-blue-500/20">
+                  ✓ Zéro papier à archiver !
                 </div>
               </div>
 
               {/* Moment 3 : Soir */}
-              <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
-                    🌙 SOIR (18h30)
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-mono">20 sec chrono</span>
+              <div
+                onClick={() => setFullScreenImage(guideCleaning)}
+                className="p-4 bg-slate-950 rounded-3xl border border-slate-800 hover:border-emerald-500/50 space-y-3 cursor-pointer transition-all group shadow-md flex flex-col justify-between"
+              >
+                <div>
+                  <div className="h-32 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 relative mb-3">
+                    <img src={guideCleaning} alt="Nettoyage Soir" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <span className="absolute bottom-1.5 right-1.5 bg-slate-950/80 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-lg backdrop-blur-xs flex items-center gap-1">
+                      <Maximize2 className="w-3 h-3" /> Agrandir
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/20">
+                      🌙 3. LE SOIR (18h30)
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">20 sec</span>
+                  </div>
+
+                  <h3 className="text-sm font-black text-white mt-1.5">Nettoyage & Clôture</h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    1. Appuie sur <strong>Nettoyage</strong>.<br />
+                    2. Coche les cases du pétrin et du labo lavés.<br />
+                    3. C'est signé avec ton nom !
+                  </p>
                 </div>
-                <h3 className="text-xs font-black text-white">Nettoyage & Clôture</h3>
-                <p className="text-[11px] text-slate-300">
-                  1. Ouvre l'onglet <strong>Nettoyage</strong>.<br />
-                  2. Coche les cases du pétrin et du fournil lavés.<br />
-                  3. C'est signé avec ton nom !
-                </p>
-                <div className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 p-1.5 rounded-lg text-center">
+
+                <div className="text-xs text-emerald-400 font-bold bg-emerald-500/10 p-2 rounded-xl text-center border border-emerald-500/20">
                   ✓ Dossier 100% à jour pour la DDPP !
                 </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Galerie des 4 Infographies Complètes */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg text-white space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-400" />
+                <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                  Galerie des 4 Affiches Métier (Cliquez sur une image pour l'agrandir)
+                </h3>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              
+              <div
+                onClick={() => setFullScreenImage(guideTemp)}
+                className="bg-slate-950 p-2 rounded-2xl border border-slate-800 hover:border-amber-500 cursor-pointer transition-all group"
+              >
+                <div className="h-28 rounded-xl overflow-hidden bg-slate-900 relative">
+                  <img src={guideTemp} alt="Affiche Températures" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                </div>
+                <strong className="text-[11px] text-white block mt-2 text-center truncate">1. Températures</strong>
+              </div>
+
+              <div
+                onClick={() => setFullScreenImage(guideReception)}
+                className="bg-slate-950 p-2 rounded-2xl border border-slate-800 hover:border-blue-500 cursor-pointer transition-all group"
+              >
+                <div className="h-28 rounded-xl overflow-hidden bg-slate-900 relative">
+                  <img src={guideReception} alt="Affiche Réception" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                </div>
+                <strong className="text-[11px] text-white block mt-2 text-center truncate">2. Réceptions</strong>
+              </div>
+
+              <div
+                onClick={() => setFullScreenImage(guideCleaning)}
+                className="bg-slate-950 p-2 rounded-2xl border border-slate-800 hover:border-emerald-500 cursor-pointer transition-all group"
+              >
+                <div className="h-28 rounded-xl overflow-hidden bg-slate-900 relative">
+                  <img src={guideCleaning} alt="Affiche Nettoyage" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                </div>
+                <strong className="text-[11px] text-white block mt-2 text-center truncate">3. Nettoyage</strong>
+              </div>
+
+              <div
+                onClick={() => setFullScreenImage(guideDlc)}
+                className="bg-slate-950 p-2 rounded-2xl border border-slate-800 hover:border-pink-500 cursor-pointer transition-all group"
+              >
+                <div className="h-28 rounded-xl overflow-hidden bg-slate-900 relative">
+                  <img src={guideDlc} alt="Affiche DLC" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                </div>
+                <strong className="text-[11px] text-white block mt-2 text-center truncate">4. DLC Secondaires</strong>
               </div>
 
             </div>
