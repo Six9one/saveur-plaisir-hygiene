@@ -683,6 +683,19 @@ export const App: React.FC = () => {
     setTargets((prev) => {
       const updated = [...(prev || []), created];
       setStoredData(STORAGE_KEYS.TEMPERATURE_TARGETS, updated);
+
+      const storeId = getActiveStoreId();
+      pushStateToCloud(storeId, {
+        targets: updated,
+        records,
+        receipts,
+        secondaryDlc,
+        cleaningTasks: safeCleaningTasks,
+        pestStations,
+        wasteLogs,
+        lastUpdated: new Date().toISOString(),
+      });
+
       return updated;
     });
 
@@ -729,6 +742,19 @@ export const App: React.FC = () => {
         return t;
       });
       setStoredData(STORAGE_KEYS.TEMPERATURE_TARGETS, updated);
+
+      const storeId = getActiveStoreId();
+      pushStateToCloud(storeId, {
+        targets: updated,
+        records,
+        receipts,
+        secondaryDlc,
+        cleaningTasks: safeCleaningTasks,
+        pestStations,
+        wasteLogs,
+        lastUpdated: new Date().toISOString(),
+      });
+
       return updated;
     });
   };

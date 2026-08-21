@@ -1,6 +1,7 @@
 /**
  * Image Storage & Optimization Service for Plaisirs & Saveurs HACCP
- * Automatically compresses camera and uploaded photos before cloud sync
+ * Automatically compresses camera and uploaded photos before storage & cloud sync.
+ * Keeps photos lightweight (~30-50KB) to prevent localStorage quota exhaustion on phones.
  */
 
 export interface ImageCompressionOptions {
@@ -15,9 +16,9 @@ export const compressImage = async (
   options: ImageCompressionOptions = {}
 ): Promise<string> => {
   const {
-    maxWidth = 1000,
-    maxHeight = 1000,
-    quality = 0.82,
+    maxWidth = 640,
+    maxHeight = 640,
+    quality = 0.72,
     format = 'image/jpeg',
   } = options;
 
@@ -25,37 +26,47 @@ export const compressImage = async (
     const img = new Image();
 
     img.onload = () => {
-      let { width, height } = img;
+      try {
+        let { width, height } = img;
 
-      // Maintain aspect ratio while bounding within maxWidth/maxHeight
-      if (width > maxWidth || height > maxHeight) {
-        if (width / height > maxWidth / maxHeight) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        } else {
-          width = Math.round((width * maxHeight) / height);
-          height = maxHeight;
+        // Maintain aspect ratio while bounding within maxWidth/maxHeight
+        if (width > maxWidth || height > maxHeight) {
+          if (width / height > maxWidth / maxHeight) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
         }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(typeof fileOrBase64 === 'string' ? fileOrBase64 : '');
+          return;
+        }
+
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL(format, quality);
+        resolve(compressedDataUrl);
+      } catch (err) {
+        console.warn('[ImageStorage] Canvas compression fallback:', err);
+        resolve(typeof fileOrBase64 === 'string' ? fileOrBase64 : '');
       }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Canvas 2D context not available'));
-        return;
-      }
-
-      // Draw and compress
-      ctx.drawImage(img, 0, 0, width, height);
-      const compressedDataUrl = canvas.toDataURL(format, quality);
-      resolve(compressedDataUrl);
     };
 
     img.onerror = (err) => {
-      reject(err);
+      console.warn('[ImageStorage] Image load error, using fallback', err);
+      if (typeof fileOrBase64 === 'string') {
+        resolve(fileOrBase64);
+      } else {
+        reject(err);
+      }
     };
 
     if (typeof fileOrBase64 === 'string') {
@@ -65,6 +76,8 @@ export const compressImage = async (
       reader.onload = (e) => {
         if (e.target?.result) {
           img.src = e.target.result as string;
+        } else {
+          reject(new Error('FileReader empty result'));
         }
       };
       reader.onerror = (e) => reject(e);
