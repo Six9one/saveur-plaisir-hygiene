@@ -7,6 +7,7 @@ import {
   Bug,
   FileSpreadsheet,
   HelpCircle,
+  FlaskConical,
 } from 'lucide-react';
 
 export type TabType =
@@ -14,6 +15,7 @@ export type TabType =
   | 'reception'
   | 'secondary_dlc'
   | 'cleaning'
+  | 'approved_products'
   | 'pest_control'
   | 'waste'
   | 'audit_report'
@@ -58,15 +60,21 @@ export const Navigation: React.FC<NavigationProps> = ({
     {
       id: 'cleaning' as TabType,
       label: 'Nettoyage',
-      sublabel: 'PND & Hygiène',
+      sublabel: 'PND & Machines',
       icon: Sparkles,
       badge: pendingCleaningCount > 0 ? `${pendingCleaningCount}` : null,
       badgeColor: 'bg-indigo-500',
     },
     {
+      id: 'approved_products' as TabType,
+      label: 'Produits',
+      sublabel: 'Agréés EN 1276',
+      icon: FlaskConical,
+    },
+    {
       id: 'pest_control' as TabType,
       label: 'Nuisibles',
-      sublabel: 'Pièges & Dératisation',
+      sublabel: 'Pièges & 3D',
       icon: Bug,
     },
     {
@@ -86,7 +94,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <nav className="bg-slate-900 border-b border-slate-800 text-white sticky top-20 z-20 shadow-md no-print py-2 px-2 sm:px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-8 gap-1.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;

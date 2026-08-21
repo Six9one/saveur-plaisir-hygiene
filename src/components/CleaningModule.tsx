@@ -17,7 +17,6 @@ import {
   Check,
   Settings,
   Bell,
-  BellRing,
 } from 'lucide-react';
 import { compressImage } from '../services/imageStorage';
 import {
@@ -291,20 +290,20 @@ export const CleaningModule: React.FC<CleaningModuleProps> = ({
       />
       
       {/* ================= HEADER (CLEAN & MOBILE FIRST) ================= */}
-      <div className="flex items-center justify-between gap-3 bg-slate-900 text-white p-4 rounded-3xl border border-slate-800 shadow-md">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-2.5 bg-slate-900 text-white p-3.5 sm:p-4 rounded-3xl border border-slate-800 shadow-md">
+        <div className="flex items-center gap-2.5 min-w-0">
           {onGoHome && (
             <button
               onClick={onGoHome}
-              className="p-2 rounded-2xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-white transition-all cursor-pointer"
+              className="p-2 rounded-2xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-white transition-all cursor-pointer shrink-0"
               title="Retour"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4" />
             </button>
           )}
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-black tracking-tight text-white">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h2 className="text-base sm:text-lg font-black tracking-tight text-white truncate">
                 Nettoyage
               </h2>
               {totalCount > 0 && (
@@ -315,22 +314,37 @@ export const CleaningModule: React.FC<CleaningModuleProps> = ({
                       : 'bg-rose-500 text-white'
                   }`}
                 >
-                  {pendingCount === 0 ? 'Fait ✓' : `${pendingCount} à faire`}
+                  {pendingCount === 0 ? 'Fait ✓' : `${pendingCount} restant`}
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-400 font-medium">
-              {isAdmin ? '👤 Mode Admin (Adel B)' : 'Touchez une machine pour valider'}
+            <p className="text-[11px] text-slate-400 font-medium truncate">
+              {isAdmin ? '👤 Mode Admin (Adel B)' : 'Touchez pour valider'}
             </p>
           </div>
         </div>
 
-        {/* Top Actions: Add Machine (Adel B) & Reset */}
-        <div className="flex items-center gap-2">
+        {/* Top Actions: Notification Pill, Add Machine & Reset */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={notifPermission === 'granted' ? handleTestNotification : handleEnableNotifications}
+            className={`h-9 px-2.5 sm:px-3 rounded-2xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+              notifPermission === 'granted'
+                ? 'bg-slate-800 border-slate-700 text-emerald-400 hover:text-white'
+                : 'bg-amber-500/15 border-amber-500/30 text-amber-300 hover:bg-amber-500 hover:text-slate-950'
+            }`}
+            title="Rappel automatique Grand Nettoyage le Dimanche à 12h00"
+          >
+            <Bell className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Dim. 12h</span>
+            <span className="text-[10px]">{notifPermission === 'granted' ? '✓' : 'Activer'}</span>
+          </button>
+
           {isAdmin && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="h-10 px-3.5 sm:px-4 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all cursor-pointer whitespace-nowrap"
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all cursor-pointer whitespace-nowrap"
               title="Ajouter un matériel"
             >
               <Plus className="w-4 h-4 stroke-[3] shrink-0" />
@@ -341,7 +355,7 @@ export const CleaningModule: React.FC<CleaningModuleProps> = ({
           {totalCount > 0 && onResetAllTasks && (
             <button
               onClick={onResetAllTasks}
-              className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 border border-slate-700 transition-all active:scale-95 cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 border border-slate-700 transition-all active:scale-95 cursor-pointer"
               title="Remettre tout à faire pour la journée"
             >
               <RotateCcw className="w-4 h-4" />
@@ -350,58 +364,7 @@ export const CleaningModule: React.FC<CleaningModuleProps> = ({
         </div>
       </div>
 
-      {/* ================= SUNDAY 12:00 BIG CLEANING NOTIFICATION BANNER ================= */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-md text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/25 flex items-center justify-center shrink-0 shadow-inner">
-            <BellRing className="w-5 h-5 text-amber-400" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <strong className="text-xs sm:text-sm font-black text-white truncate">
-                Alerte Grand Nettoyage (Dimanche 12h00)
-              </strong>
-              <span
-                className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                  notifPermission === 'granted'
-                    ? 'bg-emerald-500 text-slate-950'
-                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                }`}
-              >
-                {notifPermission === 'granted' ? 'Actif sur ce téléphone ✓' : 'À Activer'}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-0.5 truncate sm:whitespace-normal">
-              Notification automatique chaque dimanche midi pour toute l'équipe (même application fermée).
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-          {notifPermission !== 'granted' ? (
-            <button
-              type="button"
-              onClick={handleEnableNotifications}
-              className="h-9 px-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all cursor-pointer whitespace-nowrap"
-            >
-              <Bell className="w-3.5 h-3.5" />
-              <span>Activer les Rappels</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleTestNotification}
-              className="h-9 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 border border-amber-500/30 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
-              title="Envoyer une notification test immédiate"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Tester la Notification</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ================= 2-COLUMN SQUARES GRID (EXACTLY LIKE IMAGE 1) ================= */}
+      {/* ================= 2-COLUMN SQUARES GRID ================= */}
       {tasks.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center text-white space-y-4 my-6">
           <div className="w-16 h-16 rounded-3xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto shadow-inner">
@@ -431,6 +394,7 @@ export const CleaningModule: React.FC<CleaningModuleProps> = ({
           {tasks.map((task) => {
             const userObj = users.find((u) => u.name === task.completedBy);
             const isDone = task.completed;
+            const hasPhoto = Boolean(task.machinePhotoUrl);
 
             const cardBackground = isDone
               ? 'bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-emerald-950/40'
@@ -442,55 +406,64 @@ export const CleaningModule: React.FC<CleaningModuleProps> = ({
               <button
                 key={task.id}
                 onClick={() => handleOpenTask(task)}
-                className={`p-3.5 sm:p-4 rounded-3xl flex flex-col justify-between text-left transition-all active:scale-95 min-h-[145px] sm:min-h-[155px] shadow-lg relative overflow-hidden group cursor-pointer border border-white/10 ${cardBackground}`}
+                className={`p-3.5 sm:p-4 rounded-3xl flex flex-col justify-between text-left transition-all active:scale-95 min-h-[155px] sm:min-h-[170px] shadow-lg relative overflow-hidden group cursor-pointer border border-white/10 ${cardBackground}`}
               >
-                {/* Top Row: Picture / Icon + Status Badge */}
-                <div className="flex items-start justify-between w-full gap-2">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-black/25 backdrop-blur-xs flex items-center justify-center text-white shrink-0 overflow-hidden shadow-inner border border-white/15">
-                    {task.machinePhotoUrl ? (
-                      <img
-                        src={task.machinePhotoUrl}
-                        alt={task.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : isAdmin ? (
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setUploadingTaskId(task.id);
-                          cardMachinePhotoInputRef.current?.click();
-                        }}
-                        className="w-full h-full flex flex-col items-center justify-center text-amber-300 hover:text-white bg-black/30 hover:bg-black/50 transition-colors cursor-pointer"
-                        title="Ajouter la photo de cette machine"
-                      >
-                        <Camera className="w-4 h-4" />
-                        <span className="text-[7px] font-black uppercase mt-0.5">+ Photo</span>
-                      </span>
-                    ) : (
-                      <Sparkles className="w-6 h-6 text-white/90" />
-                    )}
-                  </div>
+                {/* Full Square Photo Background */}
+                {hasPhoto && (
+                  <>
+                    <img
+                      src={task.machinePhotoUrl}
+                      alt={task.name}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {/* Contrast Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/45 to-black/35 pointer-events-none" />
+                  </>
+                )}
 
-                  {/* Badge */}
+                {/* Top Row: Quick Photo (if admin & no photo) + Status Badge */}
+                <div className="relative z-10 flex items-start justify-between w-full gap-2">
+                  {!hasPhoto && isAdmin ? (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUploadingTaskId(task.id);
+                        cardMachinePhotoInputRef.current?.click();
+                      }}
+                      className="px-2 py-1 rounded-xl bg-black/40 hover:bg-black/60 text-amber-300 hover:text-white border border-amber-500/30 text-[10px] font-black uppercase flex items-center gap-1 transition-colors cursor-pointer"
+                      title="Ajouter la photo de cette machine"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>+ Photo</span>
+                    </span>
+                  ) : !hasPhoto ? (
+                    <div className="w-8 h-8 rounded-xl bg-black/20 flex items-center justify-center text-white/80">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                  ) : (
+                    <div />
+                  )}
+
+                  {/* Status Badge */}
                   {isDone ? (
-                    <span className="bg-emerald-950/90 text-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs border border-emerald-400/30">
+                    <span className="bg-emerald-500 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-md">
                       <Check className="w-3 h-3 stroke-[3]" /> Fait
                     </span>
                   ) : (
-                    <span className="bg-black/35 text-white/90 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs border border-white/15">
+                    <span className="bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs border border-white/20">
                       À faire
                     </span>
                   )}
                 </div>
 
                 {/* Bottom Row: Machine Name & Status */}
-                <div className="mt-3 w-full">
-                  <h3 className="text-sm sm:text-base font-black tracking-tight text-white leading-tight line-clamp-2">
+                <div className="relative z-10 mt-auto pt-3 w-full">
+                  <h3 className="text-sm sm:text-base font-black tracking-tight text-white leading-snug drop-shadow-md line-clamp-2">
                     {task.shortName || task.name}
                   </h3>
 
                   {isDone ? (
-                    <div className="flex items-center gap-1.5 mt-1 text-[11px] font-bold text-emerald-100">
+                    <div className="flex items-center gap-1.5 mt-1 text-[11px] font-bold text-emerald-300 drop-shadow-xs">
                       <div
                         className="w-4 h-4 rounded-full overflow-hidden flex items-center justify-center text-[9px] font-black text-white shrink-0 shadow-xs"
                         style={{
@@ -505,10 +478,10 @@ export const CleaningModule: React.FC<CleaningModuleProps> = ({
                         )}
                       </div>
                       <span className="truncate">{task.completedBy ? task.completedBy.split(' ')[0] : 'Fait'}</span>
-                      <span className="text-white/60 font-mono text-[10px]">• {task.completedAt}</span>
+                      <span className="text-white/70 font-mono text-[10px]">• {task.completedAt}</span>
                     </div>
                   ) : (
-                    <p className="text-[11px] text-white/75 font-semibold truncate mt-0.5">
+                    <p className="text-[11px] text-white/80 font-semibold truncate mt-0.5 drop-shadow-xs">
                       {task.zone}
                     </p>
                   )}

@@ -193,3 +193,53 @@ export interface DdpAuditPoint {
   status: 'Conforme' | 'Non-Conforme' | 'À Vérifier';
   correctiveAdvice: string;
 }
+
+// 🧴 Produits Agréés & Fiches Techniques EN 1276 / EN 13697 / EN 1650
+export interface ApprovedProduct {
+  id: string;
+  name: string;
+  brand: 'Diversey' | 'Ecolab' | 'Anios' | 'Tork' | 'Gilac' | 'Autre Agréé';
+  category: 'Surfaces & Inox' | 'Petit Matériel & Sans Rinçage' | 'Sols & Plonge Surpuissant' | 'Machine à Granité & Circuits' | 'Lave-Mains Bactéricide' | 'Stockage Hermétique Anti-Insectes';
+  norms: string[]; // e.g. ["EN 1276", "EN 1650", "EN 13697", "Contact Alimentaire"]
+  usage: string;
+  targetEquipment: string[]; // e.g. ["Diviseuse", "Pétrin", "Cercles à tartes", "Tours inox"]
+  dosage: string; // e.g. "2% (20 ml / L)"
+  dilutionPercent?: number; // 2
+  contactTime: string; // e.g. "5 minutes"
+  needsRinse: boolean;
+  imageUrl?: string;
+  safetyDataSheetUrl?: string;
+  officialRef?: string;
+  instructions: string[];
+  precautions: string;
+  inStock: boolean;
+  verifiedDate?: string;
+}
+
+// 🥐 Matrice des 14 Allergènes Majeurs (Règlement INCO n°1169/2011)
+export type MajorAllergen =
+  | 'Gluten (Blé/Seigle/Orge)'
+  | 'Lait & Lactose (Beurre/Crème)'
+  | 'Œufs'
+  | 'Fruits à coque (Amandes/Noisettes)'
+  | 'Soja (Lécithine)'
+  | 'Graines de sésame'
+  | 'Moutarde'
+  | 'Poisson'
+  | 'Arachides'
+  | 'Céleri'
+  | 'Crustacés'
+  | 'Mollusques'
+  | 'Lupin'
+  | 'Sulfites (>10mg/kg)';
+
+export interface AllergenItem {
+  id: string;
+  name: string;
+  category: 'Viennoiseries' | 'Pains & Baguettes' | 'Pâtisseries' | 'Snacking & Salé';
+  description: string;
+  allergens: MajorAllergen[];
+  tracesPossible?: MajorAllergen[];
+  lastUpdated: string;
+  isHouseMade: boolean;
+}

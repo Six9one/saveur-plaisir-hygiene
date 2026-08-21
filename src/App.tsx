@@ -13,6 +13,7 @@ import type {
   PestInvoice,
   WasteLog,
   DdpAuditPoint,
+  ApprovedProduct,
 } from './types';
 import {
   DEFAULT_USERS,
@@ -24,6 +25,7 @@ import {
   DEFAULT_PEST_INVOICES,
   DEFAULT_WASTE_LOGS,
   DEFAULT_DDPP_AUDIT_POINTS,
+  DEFAULT_APPROVED_PRODUCTS,
   STORAGE_KEYS,
   getStoredData,
   setStoredData,
@@ -43,6 +45,7 @@ import { WasteModule } from './components/WasteModule';
 import { DdpAuditSimulatorModule } from './components/DdpAuditSimulatorModule';
 import { AuditReportModule } from './components/AuditReportModule';
 import { UserGuideModule } from './components/UserGuideModule';
+import { ApprovedProductsModule } from './components/ApprovedProductsModule';
 import { PinModal } from './components/PinModal';
 import { IncidentModal } from './components/IncidentModal';
 import { CloudSyncModal } from './components/CloudSyncModal';
@@ -63,7 +66,6 @@ import {
   deleteTargetFromSupabase,
   insertRecordToSupabase,
 } from './services/supabase';
-import { ArrowLeft } from 'lucide-react';
 
 export const App: React.FC = () => {
   // State Initialization from LocalStorage with safe fallbacks
@@ -171,7 +173,9 @@ export const App: React.FC = () => {
   const [auditPoints, setAuditPoints] = useState<DdpAuditPoint[]>(() =>
     getStoredData<DdpAuditPoint[]>(STORAGE_KEYS.DDPP_AUDIT_POINTS, DEFAULT_DDPP_AUDIT_POINTS) || DEFAULT_DDPP_AUDIT_POINTS
   );
-
+  const [approvedProducts, setApprovedProducts] = useState<ApprovedProduct[]>(() =>
+    getStoredData<ApprovedProduct[]>(STORAGE_KEYS.APPROVED_PRODUCTS, DEFAULT_APPROVED_PRODUCTS) || DEFAULT_APPROVED_PRODUCTS
+  );
 
   // Modals & Cloud states
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
@@ -1015,6 +1019,22 @@ export const App: React.FC = () => {
     );
   };
 
+  const handleUpdateApprovedProduct = (updated: ApprovedProduct) => {
+    setApprovedProducts((prev) => {
+      const list = (prev || []).map((p) => (p.id === updated.id ? updated : p));
+      setStoredData(STORAGE_KEYS.APPROVED_PRODUCTS, list);
+      return list;
+    });
+  };
+
+  const handleAddApprovedProduct = (newProd: ApprovedProduct) => {
+    setApprovedProducts((prev) => {
+      const list = [...(prev || []), newProd];
+      setStoredData(STORAGE_KEYS.APPROVED_PRODUCTS, list);
+      return list;
+    });
+  };
+
   const handleForceSync = async () => {
     setIsCloudSyncing(true);
     const storeId = getActiveStoreId();
@@ -1074,18 +1094,6 @@ export const App: React.FC = () => {
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         
         {/* Back Button when inside a sub-module */}
-        {activeTab !== 'home' && (
-          <div className="mb-4 no-print flex items-center justify-between">
-            <button
-              onClick={() => setActiveTab('home')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-amber-400 active:scale-95 transition-transform"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Menu Principal (Tableau de Bord)</span>
-            </button>
-          </div>
-        )}
-
         {/* Dashboard Grid (Shown when activeTab === 'home') */}
         {activeTab === 'home' && (
           <MobileDashboard
@@ -1139,6 +1147,15 @@ export const App: React.FC = () => {
             onDeleteTask={handleDeleteCleaningTask}
             onResetAllTasks={handleResetCleaningTasks}
             onGoHome={() => setActiveTab('home')}
+          />
+        )}
+
+        {activeTab === 'approved_products' && (
+          <ApprovedProductsModule
+            products={approvedProducts}
+            currentUser={currentUser}
+            onUpdateProduct={handleUpdateApprovedProduct}
+            onAddProduct={handleAddApprovedProduct}
           />
         )}
 

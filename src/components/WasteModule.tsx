@@ -3,13 +3,12 @@ import type { WasteLog, User } from '../types';
 import {
   Trash2,
   Plus,
-  Scale,
   CheckCircle2,
-  AlertOctagon,
   Camera,
   X,
   FileText,
-  Recycle,
+  Search,
+  Calendar,
 } from 'lucide-react';
 import { compressImage } from '../services/imageStorage';
 
@@ -20,15 +19,6 @@ interface WasteModuleProps {
   onDeleteLog?: (id: string) => void;
 }
 
-const PRESET_WASTE_ITEMS = [
-  { name: 'Pâtons Baguette Tradition', category: 'Pâtons / Pâte' as const, reason: 'Sur-fermentation' as const, defaultKg: '3.5' },
-  { name: 'Reste Crème Pâtissière', category: 'Pâtisseries' as const, reason: 'DLC Dépassée' as const, defaultKg: '1.2' },
-  { name: 'Sandwichs & Snacking J-1', category: 'Snacking/Salé' as const, reason: 'DLC Dépassée' as const, defaultKg: '2.0' },
-  { name: 'Viennoiseries invendues (sec)', category: 'Pâtisseries' as const, reason: 'Altération / Goût' as const, defaultKg: '1.8' },
-  { name: 'Lait & Crème Fraîche', category: 'Matières Premières' as const, reason: 'DLC Dépassée' as const, defaultKg: '1.0' },
-  { name: 'Plaque Pâte Feuilletée Brûlée', category: 'Pâtons / Pâte' as const, reason: 'Erreur Cuisson' as const, defaultKg: '2.2' },
-];
-
 export const WasteModule: React.FC<WasteModuleProps> = ({
   logs,
   currentUser,
@@ -36,27 +26,52 @@ export const WasteModule: React.FC<WasteModuleProps> = ({
   onDeleteLog,
 }) => {
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Form states
   const [productName, setProductName] = useState<string>('');
   const [category, setCategory] = useState<WasteLog['category']>('Pâtons / Pâte');
   const [quantityKg, setQuantityKg] = useState<string>('2.5');
   const [reason, setReason] = useState<WasteLog['reason']>('DLC Dépassée');
-  const [method, setMethod] = useState<WasteLog['method']>('Biodéchets Dédiés');
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
   const [notes, setNotes] = useState<string>('');
   const [previewModalImg, setPreviewModalImg] = useState<{ url: string; title: string } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-
-  const totalKg = (logs || []).reduce((acc, curr) => acc + (Number(curr?.quantityKg) || 0), 0);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  // Calculations & Analytics
+  const totalKg = (logs || []).reduce((acc, curr) => acc + (Number(curr?.quantityKg) || 0), 0);
+
+  const categoryTotals: Record<string, number> = {
+    'Pâtons / Pâte': 0,
+    'Pâtisseries': 0,
+    'Snacking/Salé': 0,
+    'Matières Premières': 0,
+  };
+
+  (logs || []).forEach((log) => {
+    if (categoryTotals[log.category] !== undefined) {
+      categoryTotals[log.category] += Number(log.quantityKg) || 0;
+    }
+  });
+
+  const filteredLogs = (logs || []).filter((log) => {
+    const matchesCat = selectedCategoryFilter === 'all' || log.category === selectedCategoryFilter;
+    const query = searchQuery.toLowerCase();
+    const matchesSearch =
+      log.productName.toLowerCase().includes(query) ||
+      log.reason.toLowerCase().includes(query) ||
+      (log.notes && log.notes.toLowerCase().includes(query)) ||
+      log.discardedBy.toLowerCase().includes(query);
+    return matchesCat && matchesSearch;
+  });
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -64,16 +79,16 @@ export const WasteModule: React.FC<WasteModuleProps> = ({
     try {
       const compressed = await compressImage(file, { maxWidth: 1000, maxHeight: 1000, quality: 0.85 });
       setPhotoUrl(compressed);
+      showToast('📷 Photo enregistrée !');
     } catch (err) {
       console.error('Image compression error', err);
     }
   };
 
-  const handleSelectPreset = (preset: typeof PRESET_WASTE_ITEMS[0]) => {
-    setProductName(preset.name);
-    setCategory(preset.category);
-    setReason(preset.reason);
-    setQuantityKg(preset.defaultKg);
+  const handleAdjustKg = (delta: number) => {
+    const current = parseFloat(quantityKg) || 0;
+    const next = Math.max(0.1, Math.round((current + delta) * 10) / 10);
+    setQuantityKg(next.toString());
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -91,7 +106,7 @@ export const WasteModule: React.FC<WasteModuleProps> = ({
       category,
       quantityKg: parseFloat(quantityKg) || 0,
       reason,
-      method,
+      method: 'Biodéchets Dédiés',
       discardedAt: formattedDate,
       discardedBy: currentUser?.name || 'Adel B.',
       photoUrl,
@@ -102,7 +117,7 @@ export const WasteModule: React.FC<WasteModuleProps> = ({
     setNotes('');
     setPhotoUrl(undefined);
     setShowAddModal(false);
-    showToast(`✓ Déclaration de perte "${productName.trim()}" enregistrée !`);
+    showToast(`✓ Perte "${productName.trim()}" (${quantityKg} kg) consignée !`);
   };
 
   return (
@@ -110,100 +125,91 @@ export const WasteModule: React.FC<WasteModuleProps> = ({
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-white text-slate-950 text-xs sm:text-sm font-bold px-4 py-3 rounded-2xl shadow-2xl border border-slate-200 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-3">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-amber-400 text-xs sm:text-sm font-bold px-4 py-3 rounded-2xl shadow-2xl border border-amber-500/40 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-3">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* ================= 1. HEADER (CLEAN & MODERN) ================= */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-lg text-white">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-          
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/25 flex items-center justify-center shrink-0 shadow-inner">
-              <Trash2 className="w-5 h-5 text-amber-400" />
+      {/* ================= 1. COMPACT & SLEEK HEADER ================= */}
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-lg text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0 shadow-inner">
+            <Trash2 className="w-5 h-5 text-amber-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-base sm:text-lg font-black text-white tracking-tight">
+                Déchets & Pertes
+              </h1>
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                DDPP Conforme ✓
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-base sm:text-lg font-black text-white tracking-tight">
-                  Suivi des Déchets & Pertes
-                </h2>
-                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-emerald-500 text-slate-950 shadow-xs">
-                  Conformité DDPP ✓
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">
-                Registre d'élimination des denrées périmées, invendus et pâtes non conformes
-              </p>
+            <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 font-medium">
+              <span>Total écarté :</span>
+              <strong className="text-rose-400 font-black font-mono">{totalKg.toFixed(1)} kg</strong>
+              <span>•</span>
+              <span className="text-slate-400">{logs.length} entrée{logs.length > 1 ? 's' : ''}</span>
             </div>
           </div>
-
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="h-10 px-4 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-all cursor-pointer whitespace-nowrap self-start sm:self-center"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>Déclarer une Perte</span>
-          </button>
-
         </div>
+
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="h-11 px-5 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer whitespace-nowrap self-start sm:self-center"
+        >
+          <Plus className="w-4 h-4 stroke-[3]" />
+          <span>Déclarer une Perte</span>
+        </button>
+
       </div>
 
-      {/* ================= 2. KPI STATS CARDS ================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* Card 1: Total Pertes */}
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-3xl flex items-center gap-3.5 shadow-md">
-          <div className="p-3 rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/25 shrink-0">
-            <Scale className="w-6 h-6" />
-          </div>
-          <div className="min-w-0">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-              Total Pertes Enregistrées
-            </span>
-            <strong className="text-lg sm:text-xl font-black text-rose-400 block mt-0.5">
-              {totalKg.toFixed(1)} kg
-            </strong>
-            <span className="text-[11px] text-slate-400">
-              {logs.length} déclaration{logs.length > 1 ? 's' : ''} au registre
-            </span>
-          </div>
+      {/* ================= 2. CATEGORY PILLS WITH LIVE WEIGHTS & SEARCH ================= */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Category Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 no-scrollbar">
+          {[
+            { id: 'all', label: 'Tous', weight: totalKg },
+            { id: 'Pâtons / Pâte', label: '🥖 Pâtons', weight: categoryTotals['Pâtons / Pâte'] },
+            { id: 'Pâtisseries', label: '🍰 Pâtisseries', weight: categoryTotals['Pâtisseries'] },
+            { id: 'Snacking/Salé', label: '🥪 Snacking', weight: categoryTotals['Snacking/Salé'] },
+            { id: 'Matières Premières', label: '🥛 Matières 1ères', weight: categoryTotals['Matières Premières'] },
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategoryFilter(cat.id)}
+              className={`px-3 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                selectedCategoryFilter === cat.id
+                  ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20'
+                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>{cat.label}</span>
+              <span
+                className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                  selectedCategoryFilter === cat.id
+                    ? 'bg-slate-950/20 text-slate-950 font-black'
+                    : 'bg-slate-800 text-slate-400'
+                }`}
+              >
+                {cat.weight.toFixed(1)}kg
+              </span>
+            </button>
+          ))}
         </div>
 
-        {/* Card 2: Statut DDPP */}
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-3xl flex items-center gap-3.5 shadow-md">
-          <div className="p-3 rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 shrink-0">
-            <CheckCircle2 className="w-6 h-6" />
-          </div>
-          <div className="min-w-0">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-              Contrôle Sanitaire
-            </span>
-            <strong className="text-xs sm:text-sm font-black text-emerald-400 block mt-0.5">
-              ✓ Aucun produit périmé
-            </strong>
-            <span className="text-[11px] text-slate-400">
-              Retrait immédiat & traçabilité OK
-            </span>
-          </div>
-        </div>
-
-        {/* Card 3: Filière d'élimination */}
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-3xl flex items-center gap-3.5 shadow-md">
-          <div className="p-3 rounded-2xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 shrink-0">
-            <Recycle className="w-6 h-6" />
-          </div>
-          <div className="min-w-0">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-              Filière de Traitement
-            </span>
-            <strong className="text-xs sm:text-sm font-black text-slate-200 block mt-0.5">
-              Bac Biodéchets Dédié
-            </strong>
-            <span className="text-[11px] text-slate-400">
-              Valorisation organique conforme
-            </span>
-          </div>
+        {/* Search Bar */}
+        <div className="relative min-w-[200px]">
+          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Rechercher produit..."
+            className="w-full pl-8.5 pr-3 py-2 rounded-2xl bg-slate-900 border border-slate-800 text-xs font-bold text-white placeholder-slate-500 focus:outline-hidden focus:border-amber-500"
+          />
         </div>
       </div>
 
@@ -213,49 +219,49 @@ export const WasteModule: React.FC<WasteModuleProps> = ({
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-amber-400" />
             <h3 className="text-sm font-bold text-white">
-              Journal Officiel des Retraits & Destructions
+              Historique des Déclarations ({filteredLogs.length} entrée{filteredLogs.length > 1 ? 's' : ''})
             </h3>
           </div>
-          <span className="text-xs text-slate-400 font-mono">
-            {logs.length} entrée{logs.length > 1 ? 's' : ''}
+          <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+            ✓ Conforme DDPP
           </span>
         </div>
 
-        {logs.length === 0 ? (
-          <div className="p-8 text-center text-slate-400">
+        {filteredLogs.length === 0 ? (
+          <div className="p-10 text-center text-slate-400">
             <Trash2 className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-            <h4 className="text-sm font-bold text-white">Aucune perte enregistrée</h4>
-            <p className="text-xs mt-1">Cliquez sur « Déclarer une Perte » pour consigner les denrées écartées.</p>
+            <h4 className="text-sm font-bold text-white">Aucun déchet enregistré</h4>
+            <p className="text-xs mt-1">Cliquez sur « Déclarer une Perte » pour enregistrer un retrait.</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {logs.map((log) => (
+            {filteredLogs.map((log) => (
               <div
                 key={log.id}
-                className="p-3.5 sm:p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md transition-all"
+                className="p-3.5 sm:p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md transition-all group"
               >
                 {/* Left: Info & Photo */}
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-3.5 min-w-0">
                   {log.photoUrl ? (
                     <div
                       onClick={() => setPreviewModalImg({ url: log.photoUrl!, title: log.productName })}
-                      className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700 overflow-hidden cursor-pointer shrink-0 relative group"
+                      className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-700 overflow-hidden cursor-pointer shrink-0 relative group"
                       title="Agrandir la photo de preuve"
                     >
                       <img src={log.photoUrl} alt={log.productName} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/10 flex items-center justify-center text-[10px] text-white">
+                      <div className="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/10 flex items-center justify-center text-[10px] text-white font-bold">
                         🔍
                       </div>
                     </div>
                   ) : (
-                    <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 text-slate-500">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 text-slate-500">
                       <Trash2 className="w-5 h-5 text-slate-500" />
                     </div>
                   )}
 
-                  <div className="min-w-0">
+                  <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <strong className="text-xs sm:text-sm font-black text-white truncate">
+                      <strong className="text-xs sm:text-sm font-black text-white group-hover:text-amber-400 transition-colors truncate">
                         {log.productName}
                       </strong>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
@@ -263,35 +269,38 @@ export const WasteModule: React.FC<WasteModuleProps> = ({
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-1 flex-wrap">
-                      <span>🕒 {log.discardedAt}</span>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400 flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-slate-500" />
+                        {log.discardedAt}
+                      </span>
                       <span>•</span>
-                      <span>👤 {log.discardedBy}</span>
-                      {log.notes && (
-                        <>
-                          <span>•</span>
-                          <span className="text-slate-400 italic truncate max-w-xs">"{log.notes}"</span>
-                        </>
-                      )}
+                      <span className="text-slate-300 font-bold">👤 {log.discardedBy}</span>
                     </div>
+
+                    {log.notes && (
+                      <p className="text-[11px] text-amber-200/80 italic truncate max-w-md">
+                        « {log.notes} »
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 {/* Right: Quantity & Reason Badge */}
-                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
-                  <div className="text-left sm:text-right">
+                <div className="flex items-center justify-between sm:justify-end gap-3.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
+                  <div className="text-left sm:text-right space-y-0.5">
                     <span className="text-sm sm:text-base font-black text-rose-400 font-mono block">
                       {log.quantityKg} kg
                     </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 inline-block">
                       {log.reason}
                     </span>
                   </div>
 
-                  {onDeleteLog && currentUser?.name === 'Adel B.' && (
+                  {onDeleteLog && (
                     <button
                       onClick={() => onDeleteLog(log.id)}
-                      className="p-2 rounded-xl bg-slate-900 hover:bg-rose-600 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      className="p-2 rounded-xl bg-slate-900 hover:bg-rose-600 text-slate-500 hover:text-white transition-colors cursor-pointer"
                       title="Supprimer cette ligne"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -305,24 +314,24 @@ export const WasteModule: React.FC<WasteModuleProps> = ({
         )}
       </div>
 
-      {/* ================= 4. MODAL DECLARATION DE PERTE (DARK THEME) ================= */}
+      {/* ================= 4. MODAL DECLARATION DE PERTE (SIMPLE & ULTRA RAPIDE) ================= */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-sm no-print animate-in fade-in duration-150">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-white max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md no-print animate-in fade-in duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl text-white">
             
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/25 flex items-center justify-center">
-                  <AlertOctagon className="w-4 h-4 text-amber-400" />
+                <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-xs">
+                  <Trash2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-black text-white">
-                    Déclarer une Perte / Destruction
+                  <h3 className="text-base font-black text-white">
+                    Déclarer une Perte
                   </h3>
-                  <p className="text-xs text-slate-400">
-                    Traçabilité obligatoire de retrait des produits non conformes
-                  </p>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    Saisie ultra-simple & rapide
+                  </span>
                 </div>
               </div>
 
@@ -334,190 +343,177 @@ export const WasteModule: React.FC<WasteModuleProps> = ({
               </button>
             </div>
 
-            {/* Quick Presets */}
-            <div className="pt-3 pb-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
-                ⚡ Suggestions Rapides (1 Clic) :
-              </span>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {PRESET_WASTE_ITEMS.map((item, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleSelectPreset(item)}
-                    className="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500 text-slate-300 hover:text-amber-400 transition-all cursor-pointer"
-                  >
-                    {item.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="pt-3 space-y-3.5">
+            <form onSubmit={handleSubmit} className="pt-4 space-y-4">
               
-              {/* Product Name */}
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-1">
-                  Produit écarté / Denrée <span className="text-amber-400">*</span>
+              {/* 1. Product Name & Quick Tags */}
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-300">
+                  Produit / Denrée <span className="text-amber-400">*</span>
                 </label>
+                
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Pâtons tradition, Crème pâtissière, Sandwichs poulet..."
+                  placeholder="Ex : Pâtons tradition, Crème pâtissière..."
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
-                  className="w-full text-xs sm:text-sm p-3 rounded-2xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 font-bold focus:outline-none focus:border-amber-500"
+                  className="w-full text-sm p-3 rounded-2xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 font-bold focus:outline-hidden focus:border-amber-500 shadow-inner"
                 />
+
+                {/* 4 Smart Quick Chips */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[
+                    { label: '🥖 Pâtons (3.5kg)', name: 'Pâtons Baguette Tradition', cat: 'Pâtons / Pâte' as const, reason: 'Sur-fermentation' as const, kg: '3.5' },
+                    { label: '🍰 Crème (1.2kg)', name: 'Crème Pâtissière', cat: 'Pâtisseries' as const, reason: 'DLC Dépassée' as const, kg: '1.2' },
+                    { label: '🥐 Viennoiseries (1.8kg)', name: 'Viennoiseries Invendues', cat: 'Pâtisseries' as const, reason: 'Altération / Goût' as const, kg: '1.8' },
+                    { label: '🥪 Sandwichs (2kg)', name: 'Sandwichs J-1', cat: 'Snacking/Salé' as const, reason: 'DLC Dépassée' as const, kg: '2.0' },
+                  ].map((chip, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setProductName(chip.name);
+                        setCategory(chip.cat);
+                        setReason(chip.reason);
+                        setQuantityKg(chip.kg);
+                      }}
+                      className="text-[10px] font-bold px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500 text-slate-400 hover:text-amber-400 transition-all cursor-pointer"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Category & Weight */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* 2. Weight Selector (Tactile & Big) */}
+              <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+                  <span>Poids de la perte :</span>
+                  <div className="flex items-center gap-1">
+                    {['1', '2', '5'].map((presetKg) => (
+                      <button
+                        key={presetKg}
+                        type="button"
+                        onClick={() => setQuantityKg(presetKg)}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg font-mono font-black ${
+                          quantityKg === presetKg
+                            ? 'bg-amber-500 text-slate-950'
+                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        {presetKg}kg
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleAdjustKg(-0.5)}
+                    className="w-11 h-11 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-black text-lg flex items-center justify-center active:scale-95 transition-all"
+                  >
+                    -
+                  </button>
+
+                  <div className="flex items-baseline gap-1 text-center">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      required
+                      value={quantityKg}
+                      onChange={(e) => setQuantityKg(e.target.value)}
+                      className="w-24 text-center text-2xl font-black text-rose-400 font-mono bg-transparent focus:outline-hidden"
+                    />
+                    <span className="text-sm font-black text-slate-400">kg</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleAdjustKg(1)}
+                    className="w-11 h-11 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-black text-lg flex items-center justify-center active:scale-95 transition-all"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Reason & Category Row */}
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-1">
+                  <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
+                    Motif :
+                  </label>
+                  <select
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value as any)}
+                    className="w-full text-xs p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold focus:outline-hidden focus:border-amber-500"
+                  >
+                    <option value="DLC Dépassée">📅 DLC Dépassée</option>
+                    <option value="Sur-fermentation">💨 Sur-fermentation</option>
+                    <option value="Altération / Goût">👅 Goût / Aspect</option>
+                    <option value="Erreur Cuisson">🔥 Brûlé / Cuisson</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
                     Catégorie :
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as any)}
-                    className="w-full text-xs sm:text-sm p-3 rounded-2xl bg-slate-950 border border-slate-800 text-white font-bold focus:outline-none focus:border-amber-500"
+                    className="w-full text-xs p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold focus:outline-hidden focus:border-amber-500"
                   >
-                    <option value="Pâtons / Pâte">Pâtons / Pâte</option>
-                    <option value="Pâtisseries">Pâtisseries</option>
-                    <option value="Matières Premières">Matières Premières</option>
-                    <option value="Snacking/Salé">Snacking / Salé</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-1">
-                    Poids / Quantité (kg) <span className="text-amber-400">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    required
-                    value={quantityKg}
-                    onChange={(e) => setQuantityKg(e.target.value)}
-                    className="w-full text-xs sm:text-sm p-3 rounded-2xl bg-slate-950 border border-slate-800 text-rose-400 font-mono font-bold focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-              </div>
-
-              {/* Reason & Method */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-1">
-                    Motif du Rejet :
-                  </label>
-                  <select
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value as any)}
-                    className="w-full text-xs sm:text-sm p-3 rounded-2xl bg-slate-950 border border-slate-800 text-white font-bold focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="DLC Dépassée">DLC / Date Dépassée</option>
-                    <option value="Sur-fermentation">Sur-fermentation Pâte</option>
-                    <option value="Altération / Goût">Altération / Goût anormal</option>
-                    <option value="Erreur Cuisson">Erreur Cuisson / Brûlé</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-1">
-                    Filière d'Élimination :
-                  </label>
-                  <select
-                    value={method}
-                    onChange={(e) => setMethod(e.target.value as any)}
-                    className="w-full text-xs sm:text-sm p-3 rounded-2xl bg-slate-950 border border-slate-800 text-emerald-400 font-bold focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="Biodéchets Dédiés">Bac Biodéchets Dédié</option>
-                    <option value="Destruction Volontaire">Destruction Volontaire Immédiate</option>
+                    <option value="Pâtons / Pâte">🥖 Pâtons</option>
+                    <option value="Pâtisseries">🍰 Pâtisseries</option>
+                    <option value="Snacking/Salé">🥪 Snacking</option>
+                    <option value="Matières Premières">🥛 Matières 1ères</option>
                   </select>
                 </div>
               </div>
 
-              {/* Photo Proof (Camera or Gallery) */}
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-1">
-                  Photo de Preuve (Optionnel) :
-                </label>
-                
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => cameraInputRef.current?.click()}
-                    className="flex-1 py-2.5 px-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-amber-500 text-slate-300 hover:text-amber-400 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
-                  >
-                    <Camera className="w-4 h-4 text-amber-400" />
-                    <span>Prendre Photo</span>
-                  </button>
-                  <input
-                    ref={cameraInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={handlePhotoUpload}
-                  />
+              {/* 4. Quick Photo (Optional) & Note */}
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className={`px-3 py-2.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all shrink-0 ${
+                    photoUrl
+                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>{photoUrl ? '✓ Photo' : 'Photo'}</span>
+                </button>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoUpload}
+                />
 
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="py-2.5 px-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    Galerie
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handlePhotoUpload}
-                  />
-
-                  {photoUrl && (
-                    <div className="w-10 h-10 rounded-xl bg-slate-800 overflow-hidden border border-emerald-500 shrink-0 relative">
-                      <img src={photoUrl} alt="Aperçu" className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => setPhotoUrl(undefined)}
-                        className="absolute inset-0 bg-slate-950/70 text-rose-400 flex items-center justify-center text-xs font-bold"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Optional Notes */}
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-1">
-                  Commentaire / Justification (Optionnel) :
-                </label>
                 <input
                   type="text"
-                  placeholder="Ex: Problème chambre de pousse, décongelé non utilisé..."
+                  placeholder="Note / Justification (facultatif)..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full text-xs p-3 rounded-2xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                  className="flex-1 text-xs p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-hidden focus:border-amber-500"
                 />
               </div>
 
-              {/* Submit / Cancel buttons */}
-              <div className="flex gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs cursor-pointer transition-colors"
-                >
-                  Annuler
-                </button>
+              {/* 5. Submit Button */}
+              <div className="pt-2">
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 cursor-pointer transition-all"
+                  className="w-full py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/25 cursor-pointer transition-all flex items-center justify-center gap-2"
                 >
-                  Valider la Destruction
+                  <CheckCircle2 className="w-4 h-4 text-slate-950" />
+                  <span>Valider la Perte ({quantityKg} kg)</span>
                 </button>
               </div>
 
