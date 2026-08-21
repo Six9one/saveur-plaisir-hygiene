@@ -1,30 +1,62 @@
 // Service Worker for Plaisirs & Saveurs HACCP
-// Manages caching, background push notifications, and Sunday 12:00 big cleaning alerts
+// Ultra-fast auto-updating PWA cache & Background Notifications
 
-const CACHE_NAME = 'saveur-plaisir-v3';
+const CACHE_VERSION = 'saveur-plaisir-v' + Date.now();
 
+// Install immediately and activate without waiting
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
+// Clean up all old caches on activation
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+        keys.map((k) => caches.delete(k))
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Network First fetch strategy
+// Network-First with Fallback for fresh live data across all devices
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  
+  // HTML navigation & scripts: always fetch from network to get newest updates
+  const isNavOrScript = event.request.mode === 'navigate' || 
+                        event.request.destination === 'script' || 
+                        event.request.destination === 'document';
+
+  if (isNavOrScript) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Clone and update cache in background
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Other assets (images, static files)
   event.respondWith(
-    fetch(event.request)
-      .then((response) => response)
-      .catch(() => caches.match(event.request))
+    caches.match(event.request).then((cached) => {
+      const networked = fetch(event.request).then((res) => {
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+        }
+        return res;
+      }).catch(() => cached);
+
+      return cached || networked;
+    })
   );
 });
 
@@ -63,7 +95,7 @@ self.addEventListener('push', (event) => {
   event.waitUntil(showSundayCleaningNotification(data.body));
 });
 
-// Notification Click handler: focus or open PWA to cleaning tab
+// Notification Click handler
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
@@ -85,6 +117,10 @@ self.addEventListener('notificationclick', (event) => {
 // Client PostMessage handler (Test Notification & Local Trigger)
 self.addEventListener('message', (event) => {
   if (!event.data) return;
+
+  if (event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 
   if (event.data.type === 'TRIGGER_TEST_NOTIFICATION') {
     event.waitUntil(
@@ -108,7 +144,6 @@ function checkSundaySchedule() {
   const hour = now.getHours();
   const minute = now.getMinutes();
 
-  // Dimanche entre 12h00 et 12h30
   if (day === 0 && hour === 12 && minute <= 30) {
     const todayStr = now.toDateString();
     if (lastNotificationSunday !== todayStr) {
@@ -118,5 +153,4 @@ function checkSundaySchedule() {
   }
 }
 
-// Periodic check every 15 minutes
 setInterval(checkSundaySchedule, 15 * 60 * 1000);

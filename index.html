@@ -22,12 +22,33 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Register Service Worker for PWA Push Notifications & Background Alerts
+      // Fast PWA auto-update on every entry and background return
       if ('serviceWorker' in navigator) {
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function() {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then(function(reg) {
-              console.log('[HACCP] Service Worker actif:', reg.scope);
+              // Check immediately for new versions
+              reg.update();
+
+              // Check whenever user switches back to the app tab/PWA window
+              document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') {
+                  reg.update();
+                }
+              });
+
+              // Interval check every 5 minutes
+              setInterval(function() {
+                reg.update();
+              }, 5 * 60 * 1000);
             })
             .catch(function(err) {
               console.warn('[HACCP] Service Worker registration:', err);

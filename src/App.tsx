@@ -46,6 +46,7 @@ import { DdpAuditSimulatorModule } from './components/DdpAuditSimulatorModule';
 import { AuditReportModule } from './components/AuditReportModule';
 import { UserGuideModule } from './components/UserGuideModule';
 import { ApprovedProductsModule } from './components/ApprovedProductsModule';
+import { SplashScreen } from './components/SplashScreen';
 import { PinModal } from './components/PinModal';
 import { IncidentModal } from './components/IncidentModal';
 import { CloudSyncModal } from './components/CloudSyncModal';
@@ -68,6 +69,9 @@ import {
 } from './services/supabase';
 
 export const App: React.FC = () => {
+  // Intro Splash & Auto-Update status on launch
+  const [showSplash, setShowSplash] = useState<boolean>(true);
+
   // State Initialization from LocalStorage with safe fallbacks
   const [currentUser, setCurrentUser] = useState<User>(() => {
     const stored = getStoredData<User>(STORAGE_KEYS.CURRENT_USER, DEFAULT_USERS[0]);
@@ -1249,13 +1253,13 @@ export const App: React.FC = () => {
         lastSyncedTime={lastSyncedTime}
       />
 
-      {/* Footer */}
-      <footer className="hidden md:block bg-slate-900 border-t border-slate-800 py-4 text-center text-xs text-slate-400 no-print">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Plaisirs & Saveurs • Application Hygiène, PWA Mobile & HACCP</span>
-          <span>Prêt pour déploiement Vercel</span>
-        </div>
-      </footer>
+      {/* Intro Welcome & Auto-Update Splash Screen */}
+      {showSplash && (
+        <SplashScreen
+          currentUser={currentUser}
+          onFinish={() => setShowSplash(false)}
+        />
+      )}
 
     </div>
   );
